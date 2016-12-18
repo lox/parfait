@@ -11,19 +11,14 @@ import (
 func ConfigureWatchStack(app *kingpin.Application, svc api.Services) {
 	var stackName string
 
-	cmd := app.Command("watch", "Watch a supported AWS resource, either Cloudformation or Cloudwatch logs")
+	cmd := app.Command("watch-stack", "Watch a Cloudformation stack until in a terminal state")
 	cmd.Alias("w")
 
-	cmd.Flag("stack", "The name of the cloudformation stack to watch").
-		Required().
-		StringVar(&stackName)
-
-	cmd.Flag("stack", "The name of the cloudformation stack to watch").
-		Required().
+	cmd.Arg("name", "The name of the cloudformation stack to watch").
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		return pollStack(svc, stackName)
+		return watchStack(svc, stackName)
 	})
 }
 

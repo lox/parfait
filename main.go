@@ -26,8 +26,11 @@ func run(args []string, exit func(code int)) {
 	app.Terminate(exit)
 
 	cmd.ConfigureWatchStack(app, api.DefaultServices)
-	cmd.ConfigureWatchLogs(app, api.DefaultServices)
+	cmd.ConfigureListStacks(app, api.DefaultServices)
+	cmd.ConfigureListStackOutputs(app, api.DefaultServices)
 	cmd.ConfigureCreateStack(app, api.DefaultServices)
+	cmd.ConfigureUpdateStack(app, api.DefaultServices)
+	cmd.ConfigureFollowLogs(app, api.DefaultServices)
 
 	kingpin.MustParse(app.Parse(args))
 }

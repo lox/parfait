@@ -59,7 +59,7 @@ func GetStackOutputByKey(stack *cloudformation.Stack, key string) (string, bool)
 var ErrNoStacksFound = errors.New("No matching stacks found")
 
 func FindStacksByOutputs(svc cfnInterface, match map[string]string) ([]*cloudformation.Stack, error) {
-	stacks, err := findAllActiveStacks(svc)
+	stacks, err := FindAllActiveStacks(svc)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func FindStacksByOutputs(svc cfnInterface, match map[string]string) ([]*cloudfor
 	return filteredStacks, nil
 }
 
-func findAllActiveStacks(svc cfnInterface) (stacks []*cloudformation.Stack, err error) {
+func FindAllActiveStacks(svc cfnInterface) (stacks []*cloudformation.Stack, err error) {
 	err = svc.DescribeStacksPages(nil, func(page *cloudformation.DescribeStacksOutput, last bool) bool {
 		for _, s := range page.Stacks {
 			if *s.StackStatus != "DELETE_COMPLETE" {
@@ -145,6 +145,10 @@ func StackOutputs(svc cfnInterface, name string) (stackOutputMap, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if len(resp.Stacks) != 1 {
+		return nil, fmt.Errorf("Expected 1 stack, got %d", len(resp.Stacks))
 	}
 
 	outputs := stackOutputMap{}
@@ -248,7 +252,7 @@ func isDeleteComplete(stackName string, ev *cloudformation.StackEvent) (bool, er
 	return false, nil
 }
 
-func formatResourceStatus(s string) string {
+func FormatStackStatus(s string) string {
 	switch {
 	case strings.HasSuffix(s, "COMPLETE") && !strings.HasPrefix(s, "DELETE"):
 		return color.GreenString(s)
@@ -266,7 +270,7 @@ func FormatStackEvent(event *cloudformation.StackEvent) string {
 		descr = fmt.Sprintf("=> %q", *event.ResourceStatusReason)
 	}
 	return fmt.Sprintf("%s -> %s [%s] %s",
-		formatResourceStatus(*event.ResourceStatus),
+		FormatStackStatus(*event.ResourceStatus),
 		*event.LogicalResourceId,
 		*event.ResourceType,
 		descr,

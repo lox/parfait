@@ -9,16 +9,17 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureWatchLogs(app *kingpin.Application, svc api.Services) {
+func ConfigureFollowLogs(app *kingpin.Application, svc api.Services) {
 	var logGroup, prefix string
 
-	cmd := app.Command("watch-logs", "Follow a cloudwatch log group")
+	cmd := app.Command("follow-logs", "Follow a cloudwatch log group")
 	cmd.Alias("logs")
+
 	cmd.Flag("log-group", "The cloudwatch logs group to follow").
 		Short('g').
 		StringVar(&logGroup)
 
-	cmd.Flag("prefix", "Only show logs with this prefix").
+	cmd.Flag("prefix", "Filter log streams by this prefix").
 		Short('p').
 		StringVar(&prefix)
 
@@ -30,7 +31,6 @@ func ConfigureWatchLogs(app *kingpin.Application, svc api.Services) {
 		}
 
 		streams := []*string{}
-
 		err := svc.Logs.DescribeLogStreamsPages(params, func(page *logs.DescribeLogStreamsOutput, lastPage bool) bool {
 			for _, stream := range page.LogStreams {
 				streams = append(streams, stream.LogStreamName)

@@ -1,26 +1,25 @@
 package cmd
 
 import (
-	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/lox/parfait/api"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
+func ConfigureUpdateStack(app *kingpin.Application, svc api.Services) {
 	var stackName, tpl string
 	var params []string
 
-	cmd := app.Command("create-stack", "Create a cloudformation stack")
-	cmd.Alias("create")
+	cmd := app.Command("update-stack", "Update a cloudformation stack")
+	cmd.Alias("update")
 
-	cmd.Flag("file", "The cloudformation template").
+	cmd.Flag("file", "The cloudformation template file path").
 		Short('f').
 		StringVar(&tpl)
 
-	cmd.Arg("stack-name", "The name of the cloudformation stack").
+	cmd.Arg("name", "The name of the cloudformation stack").
+		Required().
 		StringVar(&stackName)
 
 	cmd.Arg("params", "Parameters to the stack in Key=Val form").
@@ -47,16 +46,4 @@ func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 
 		return watchStack(svc, stackName)
 	})
-}
-
-func parseStackParams(rawParams []string) (map[string]string, error) {
-	params := map[string]string{}
-	for _, arg := range rawParams {
-		parts := strings.Split(arg, "=")
-		if len(parts) != 2 {
-			return params, fmt.Errorf("Failed to parse parameter %q", arg)
-		}
-		params[parts[0]] = parts[1]
-	}
-	return params, nil
 }
