@@ -30,7 +30,14 @@ parfait watch-stack my-stack
 ### Creating a Stack
 
 ```bash
-parfait create-stack --file ./templates/vpc.yml my-stack Param1=blah Param2=blah
+parfait create-stack --url https://s3-ap-southeast-2.amazonaws.com/cloudformation-templates-ap-southeast-2/WordPress_Single_Instance.template wordpress Param1=blah Param2=blah
+
+2016/12/18 17:35:13 CREATE_IN_PROGRESS -> wordpress [AWS::CloudFormation::Stack] => "User Initiated"
+2016/12/18 17:35:19 CREATE_IN_PROGRESS -> WebServerSecurityGroup [AWS::EC2::SecurityGroup] 
+2016/12/18 17:35:34 CREATE_IN_PROGRESS -> WebServerSecurityGroup [AWS::EC2::SecurityGroup] => "Resource creation Initiated"
+2016/12/18 17:35:34 CREATE_COMPLETE -> WebServerSecurityGroup [AWS::EC2::SecurityGroup] 
+2016/12/18 17:35:38 CREATE_IN_PROGRESS -> WebServer [AWS::EC2::Instance] 
+...
 ```
 
 ### Updating a Stack
