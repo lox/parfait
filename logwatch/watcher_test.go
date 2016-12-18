@@ -2,7 +2,6 @@ package logwatch
 
 import (
 	"context"
-	"log"
 	"sync"
 	"testing"
 	"time"
@@ -54,7 +53,11 @@ func TestWatchingSimpleLog(t *testing.T) {
 		},
 	}
 
-	w := NewLogWatcher("myGroup", "myPrefix", cw)
+	w := &LogWatcher{
+		LogGroup:  "myGroup",
+		LogPrefix: "myPrefix",
+		awsApi:    cw,
+	}
 	events := make(chan *Event)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 
@@ -75,7 +78,6 @@ func TestWatchingSimpleLog(t *testing.T) {
 		if ev == nil {
 			t.Fatalf("Expected non-nil event for event %d", i)
 		}
-		log.Printf("%#v", *ev.Message)
 	}
 
 	cancel()

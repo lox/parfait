@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
 	"os"
 
-	"github.com/lox/parfait/api"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/lox/parfait/cmd"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -25,13 +26,20 @@ func run(args []string, exit func(code int)) {
 	app.DefaultEnvars()
 	app.Terminate(exit)
 
-	cmd.ConfigureWatchStack(app, api.DefaultServices)
-	cmd.ConfigureListStacks(app, api.DefaultServices)
-	cmd.ConfigureListStackOutputs(app, api.DefaultServices)
-	cmd.ConfigureCreateStack(app, api.DefaultServices)
-	cmd.ConfigureUpdateStack(app, api.DefaultServices)
-	cmd.ConfigureDeleteStack(app, api.DefaultServices)
-	cmd.ConfigureFollowLogs(app, api.DefaultServices)
+	sess, err := session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cmd.ConfigureWatchStack(app, sess)
+	cmd.ConfigureListStacks(app, sess)
+	cmd.ConfigureListStackOutputs(app, sess)
+	cmd.ConfigureCreateStack(app, sess)
+	cmd.ConfigureUpdateStack(app, sess)
+	cmd.ConfigureDeleteStack(app, sess)
+	cmd.ConfigureFollowLogs(app, sess)
 
 	kingpin.MustParse(app.Parse(args))
 }

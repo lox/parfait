@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"log"
-	"time"
 
+	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/lox/parfait/api"
+	"github.com/lox/parfait/stacks"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureWatchStack(app *kingpin.Application, svc api.Services) {
+func ConfigureWatchStack(app *kingpin.Application, sess client.ConfigProvider) {
 	var stackName string
 
 	cmd := app.Command("watch-stack", "Watch a Cloudformation stack until in a terminal state")
@@ -19,28 +19,8 @@ func ConfigureWatchStack(app *kingpin.Application, svc api.Services) {
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		return watchStack(svc, stackName, time.Time{})
+		return stacks.Watch(cloudformation.New(sess), stackName, func(event *cloudformation.StackEvent) {
+			log.Printf("%s\n", stacks.FormatStackEvent(event))
+		})
 	})
-}
-
-func watchStack(svc api.Services, stackName string, after time.Time) error {
-	err := api.PollUntilCreated(svc.Cloudformation, stackName, func(event *cloudformation.StackEvent) {
-		if event.Timestamp.After(after) {
-			log.Printf("%s\n", api.FormatStackEvent(event))
-		}
-	})
-	if err != nil {
-		return err
-	}
-
-	outputs, err := api.StackOutputs(svc.Cloudformation, stackName)
-	if err != nil {
-		return err
-	}
-
-	for k, v := range outputs {
-		log.Printf("Stack Output: %s = %s", k, v)
-	}
-
-	return nil
 }

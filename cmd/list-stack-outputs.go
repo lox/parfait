@@ -3,11 +3,13 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/lox/parfait/api"
+	"github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/lox/parfait/stacks"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureListStackOutputs(app *kingpin.Application, svc api.Services) {
+func ConfigureListStackOutputs(app *kingpin.Application, sess client.ConfigProvider) {
 	var stackName string
 
 	cmd := app.Command("list-stack-outputs", "List all cloudformation stacks")
@@ -18,7 +20,9 @@ func ConfigureListStackOutputs(app *kingpin.Application, svc api.Services) {
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		outputs, err := api.StackOutputs(svc.Cloudformation, stackName)
+		cfn := cloudformation.New(sess)
+
+		outputs, err := stacks.Outputs(cfn, stackName)
 		if err != nil {
 			return err
 		}

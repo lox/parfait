@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/aws/aws-sdk-go/aws"
-	logs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
-	"github.com/lox/parfait/api"
+	"github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
+	"github.com/lox/parfait/logwatch"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureFollowLogs(app *kingpin.Application, svc api.Services) {
+func ConfigureFollowLogs(app *kingpin.Application, sess client.ConfigProvider) {
 	var logGroup, prefix string
 
 	cmd := app.Command("follow-logs", "Follow a cloudwatch log group")
@@ -24,49 +24,15 @@ func ConfigureFollowLogs(app *kingpin.Application, svc api.Services) {
 		StringVar(&prefix)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		params := &logs.DescribeLogStreamsInput{
-			LogGroupName:        aws.String(logGroup),
-			LogStreamNamePrefix: aws.String(prefix),
-			Descending:          aws.Bool(true),
-		}
+		watcher := logwatch.NewLogWatcher(cloudwatchlogs.New(sess), logGroup, prefix)
+		events := make(chan *logwatch.Event)
 
-		streams := []*string{}
-		err := svc.Logs.DescribeLogStreamsPages(params, func(page *logs.DescribeLogStreamsOutput, lastPage bool) bool {
-			for _, stream := range page.LogStreams {
-				streams = append(streams, stream.LogStreamName)
+		go func() {
+			for event := range events {
+				watcher.PrintEvent(*event)
 			}
-			return lastPage
-		})
+		}()
 
-		if err != nil {
-			return err
-		}
-
-		filterInput := &logs.FilterLogEventsInput{
-			LogGroupName:   aws.String(logGroup),
-			LogStreamNames: streams,
-		}
-
-		err = svc.Logs.FilterLogEventsPages(filterInput, func(p *logs.FilterLogEventsOutput, lastPage bool) (shouldContinue bool) {
-			for _, event := range p.Events {
-				printLogEvent(event)
-			}
-			return lastPage
-		})
-
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return watcher.Watch(context.Background(), events)
 	})
-}
-
-func printLogEvent(ev *logs.FilteredLogEvent) {
-	name := *ev.LogStreamName
-	if len(name) > 40 {
-		name = name[:37] + "..."
-	}
-
-	fmt.Printf("%-20d %-42s %s\n", *ev.Timestamp, name, *ev.Message)
 }

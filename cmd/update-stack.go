@@ -1,23 +1,25 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"log"
 	"time"
 
-	"github.com/lox/parfait/api"
+	"github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/lox/parfait/cmd/args"
+	"github.com/lox/parfait/stacks"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureUpdateStack(app *kingpin.Application, svc api.Services) {
-	var stackName, tpl string
+func ConfigureUpdateStack(app *kingpin.Application, sess client.ConfigProvider) {
+	var stackName string
 	var params []string
 
 	cmd := app.Command("update-stack", "Update a cloudformation stack")
 	cmd.Alias("update")
 
-	cmd.Flag("file", "The cloudformation template file path").
-		Short('f').
-		StringVar(&tpl)
+	tpl := args.TemplateSource(cmd.Flag("tpl", "Either a file path or url to a cloudformation template").
+		Short('t'))
 
 	cmd.Arg("name", "The name of the cloudformation stack").
 		Required().
@@ -32,20 +34,22 @@ func ConfigureUpdateStack(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		b, err := ioutil.ReadFile(tpl)
-		if err != nil {
-			return err
-		}
-
-		ctx := api.CreateStackContext{
+		ctx := stacks.CreateStackContext{
 			Params: params,
+			Body:   tpl.String(),
 		}
 
 		t := time.Now()
-		if err = api.CreateStack(svc.Cloudformation, stackName, string(b), ctx); err != nil {
+		svc := cloudformation.New(sess)
+
+		if err = stacks.Create(svc, stackName, ctx); err != nil {
 			return err
 		}
 
-		return watchStack(svc, stackName, t)
+		return stacks.Watch(svc, stackName, func(event *cloudformation.StackEvent) {
+			if event.Timestamp.After(t) {
+				log.Printf("%s\n", stacks.FormatStackEvent(event))
+			}
+		})
 	})
 }

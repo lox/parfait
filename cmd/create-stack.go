@@ -1,33 +1,26 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
+	"log"
 	"strings"
-	"time"
 
-	"github.com/lox/parfait/api"
+	"github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/lox/parfait/cmd/args"
+	"github.com/lox/parfait/stacks"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
-	var stackName, tpl string
+func ConfigureCreateStack(app *kingpin.Application, sess client.ConfigProvider) {
+	var stackName string
 	var params []string
-	var tplURL *url.URL
 
 	cmd := app.Command("create-stack", "Create a cloudformation stack")
 	cmd.Alias("create")
 
-	cmd.Flag("file", "The file path to a cloudformation template").
-		Short('f').
-		StringVar(&tpl)
-
-	cmd.Flag("url", "The url to a cloudformation template").
-		Short('u').
-		URLVar(&tplURL)
+	tpl := args.TemplateSource(cmd.Flag("tpl", "Either a file path or url to a cloudformation template").
+		Short('t'))
 
 	cmd.Arg("stack-name", "The name of the cloudformation stack").
 		StringVar(&stackName)
@@ -36,54 +29,26 @@ func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 		StringsVar(&params)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		// validate params
-		if tplURL == nil && tpl == "" {
-			return errors.New("Must provide either --url or --file")
-		} else if tplURL != nil && tpl != "" {
-			return errors.New("Can't provide both --url and --file")
-		}
-
 		params, err := parseStackParams(params)
 		if err != nil {
 			return err
 		}
 
-		var b []byte
-
-		if tplURL != nil {
-			if b, err = readURL(tplURL); err != nil {
-				return err
-			}
-		} else {
-			if b, err = ioutil.ReadFile(tpl); err != nil {
-				return err
-			}
-		}
-
-		ctx := api.CreateStackContext{
+		ctx := stacks.CreateStackContext{
 			Params: params,
+			Body:   tpl.String(),
 		}
 
-		if err = api.CreateStack(svc.Cloudformation, stackName, string(b), ctx); err != nil {
+		cfn := cloudformation.New(sess)
+
+		if err = stacks.Create(cfn, stackName, ctx); err != nil {
 			return err
 		}
 
-		return watchStack(svc, stackName, time.Time{})
+		return stacks.Watch(cfn, stackName, func(event *cloudformation.StackEvent) {
+			log.Printf("%s\n", stacks.FormatStackEvent(event))
+		})
 	})
-}
-
-func readURL(u *url.URL) ([]byte, error) {
-	response, err := http.Get(u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Response status was %s", response.Status)
-	}
-
-	return ioutil.ReadAll(response.Body)
 }
 
 func parseStackParams(rawParams []string) (map[string]string, error) {

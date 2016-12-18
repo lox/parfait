@@ -3,33 +3,31 @@ package logwatch
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
+	cwl "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
-type Event cloudwatchlogs.FilteredLogEvent
+type Event cwl.FilteredLogEvent
 
-type cloudwatchApi interface {
-	DescribeLogStreamsPages(input *cloudwatchlogs.DescribeLogStreamsInput, fn func(p *cloudwatchlogs.DescribeLogStreamsOutput, lastPage bool) (shouldContinue bool)) error
-	FilterLogEventsPages(input *cloudwatchlogs.FilterLogEventsInput, fn func(p *cloudwatchlogs.FilterLogEventsOutput, lastPage bool) (shouldContinue bool)) error
+type awsApi interface {
+	DescribeLogStreamsPages(input *cwl.DescribeLogStreamsInput, fn func(p *cwl.DescribeLogStreamsOutput, lastPage bool) (shouldContinue bool)) error
+	FilterLogEventsPages(input *cwl.FilterLogEventsInput, fn func(p *cwl.FilterLogEventsOutput, lastPage bool) (shouldContinue bool)) error
 }
 
 type LogWatcher struct {
 	LogGroup  string
 	LogPrefix string
-
-	api cloudwatchApi
+	awsApi    awsApi
 }
 
-func NewLogWatcher(group, prefix string, api cloudwatchApi) *LogWatcher {
+func NewLogWatcher(awsApi awsApi, group, prefix string) *LogWatcher {
 	return &LogWatcher{
 		LogGroup:  group,
 		LogPrefix: prefix,
-		api:       api,
+		awsApi:    awsApi,
 	}
 }
 
@@ -55,14 +53,14 @@ func (lw *LogWatcher) pollStreams(ctx context.Context) ([]*string, error) {
 }
 
 func (lw *LogWatcher) describeStreams() ([]*string, error) {
-	params := &cloudwatchlogs.DescribeLogStreamsInput{
+	params := &cwl.DescribeLogStreamsInput{
 		LogGroupName:        aws.String(lw.LogGroup),
 		LogStreamNamePrefix: aws.String(lw.LogPrefix),
 		Descending:          aws.Bool(true),
 	}
 
 	streams := []*string{}
-	err := lw.api.DescribeLogStreamsPages(params, func(page *cloudwatchlogs.DescribeLogStreamsOutput, lastPage bool) bool {
+	err := lw.awsApi.DescribeLogStreamsPages(params, func(page *cwl.DescribeLogStreamsOutput, lastPage bool) bool {
 		for _, stream := range page.LogStreams {
 			streams = append(streams, stream.LogStreamName)
 		}
@@ -73,13 +71,13 @@ func (lw *LogWatcher) describeStreams() ([]*string, error) {
 }
 
 func (lw *LogWatcher) readEventsAfter(streams []*string, ts int64, events chan *Event) (int64, error) {
-	filterInput := &cloudwatchlogs.FilterLogEventsInput{
+	filterInput := &cwl.FilterLogEventsInput{
 		LogGroupName:   aws.String(lw.LogGroup),
 		LogStreamNames: streams,
 		StartTime:      aws.Int64(ts + 1),
 	}
-	err := lw.api.FilterLogEventsPages(filterInput,
-		func(p *cloudwatchlogs.FilterLogEventsOutput, lastPage bool) (shouldContinue bool) {
+	err := lw.awsApi.FilterLogEventsPages(filterInput,
+		func(p *cwl.FilterLogEventsOutput, lastPage bool) (shouldContinue bool) {
 			for _, event := range p.Events {
 				ts = *event.Timestamp
 				events <- (*Event)(event)
@@ -110,10 +108,6 @@ func (lw *LogWatcher) Watch(ctx context.Context, events chan *Event) error {
 		return err
 	}
 
-	for _, stream := range streams {
-		log.Printf("Found stream %s", *stream)
-	}
-
 	var after int64
 	if after, err = lw.readEventsAfter(streams, after, events); err != nil {
 		return err
@@ -121,13 +115,13 @@ func (lw *LogWatcher) Watch(ctx context.Context, events chan *Event) error {
 
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
 		case <-time.After(1 * time.Second):
 			if after, err = lw.readEventsAfter(streams, after, events); err != nil {
 				return err
 			}
-
-		case <-ctx.Done():
-			return ctx.Err()
 		}
 	}
 	return nil

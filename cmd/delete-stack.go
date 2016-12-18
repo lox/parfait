@@ -4,12 +4,14 @@ import (
 	"log"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/lox/parfait/api"
+	"github.com/lox/parfait/stacks"
+	"github.com/lox/parfait/stacks/poller"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigureDeleteStack(app *kingpin.Application, svc api.Services) {
+func ConfigureDeleteStack(app *kingpin.Application, sess client.ConfigProvider) {
 	var stackName string
 
 	cmd := app.Command("delete-stack", "Update a cloudformation stack")
@@ -23,14 +25,16 @@ func ConfigureDeleteStack(app *kingpin.Application, svc api.Services) {
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
+		cfn := cloudformation.New(sess)
+
 		t := time.Now()
-		if err := api.DeleteStack(svc.Cloudformation, stackName); err != nil {
+		if err := stacks.Delete(cfn, stackName); err != nil {
 			return err
 		}
 
-		return api.PollUntilDeleted(svc.Cloudformation, stackName, func(event *cloudformation.StackEvent) {
+		return poller.UntilDeleted(cfn, stackName, func(event *cloudformation.StackEvent) {
 			if event.Timestamp.After(t) {
-				log.Printf("%s\n", api.FormatStackEvent(event))
+				log.Printf("%s\n", stacks.FormatStackEvent(event))
 			}
 		})
 	})
