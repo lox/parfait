@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/lox/parfait/api"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -67,7 +68,7 @@ func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		return watchStack(svc, stackName)
+		return watchStack(svc, stackName, time.Time{})
 	})
 }
 

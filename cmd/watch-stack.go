@@ -19,11 +19,11 @@ func ConfigureWatchStack(app *kingpin.Application, svc api.Services) {
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		return watchStack(svc, stackName, time.Time(0))
+		return watchStack(svc, stackName, time.Time{})
 	})
 }
 
-func watchStack(svc api.Services, stackName string, after t.Time) error {
+func watchStack(svc api.Services, stackName string, after time.Time) error {
 	err := api.PollUntilCreated(svc.Cloudformation, stackName, func(event *cloudformation.StackEvent) {
 		if event.Timestamp.After(after) {
 			log.Printf("%s\n", api.FormatStackEvent(event))
