@@ -30,6 +30,7 @@ func run(args []string, exit func(code int)) {
 	cmd.ConfigureListStackOutputs(app, api.DefaultServices)
 	cmd.ConfigureCreateStack(app, api.DefaultServices)
 	cmd.ConfigureUpdateStack(app, api.DefaultServices)
+	cmd.ConfigureDeleteStack(app, api.DefaultServices)
 	cmd.ConfigureFollowLogs(app, api.DefaultServices)
 
 	kingpin.MustParse(app.Parse(args))

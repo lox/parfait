@@ -73,6 +73,16 @@ func FindStacksByOutputs(svc cfnInterface, match map[string]string) ([]*cloudfor
 	return filteredStacks, nil
 }
 
+func FindAllStacks(svc cfnInterface) (stacks []*cloudformation.Stack, err error) {
+	err = svc.DescribeStacksPages(nil, func(page *cloudformation.DescribeStacksOutput, last bool) bool {
+		for _, s := range page.Stacks {
+			stacks = append(stacks, s)
+		}
+		return last
+	})
+	return
+}
+
 func FindAllActiveStacks(svc cfnInterface) (stacks []*cloudformation.Stack, err error) {
 	err = svc.DescribeStacksPages(nil, func(page *cloudformation.DescribeStacksOutput, last bool) bool {
 		for _, s := range page.Stacks {

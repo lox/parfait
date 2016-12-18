@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/lox/parfait/api"
@@ -12,13 +15,18 @@ import (
 func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 	var stackName, tpl string
 	var params []string
+	var tplURL *url.URL
 
 	cmd := app.Command("create-stack", "Create a cloudformation stack")
 	cmd.Alias("create")
 
-	cmd.Flag("file", "The cloudformation template").
+	cmd.Flag("file", "The file path to a cloudformation template").
 		Short('f').
 		StringVar(&tpl)
+
+	cmd.Flag("url", "The url to a cloudformation template").
+		Short('u').
+		URLVar(&tplURL)
 
 	cmd.Arg("stack-name", "The name of the cloudformation stack").
 		StringVar(&stackName)
@@ -27,14 +35,29 @@ func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 		StringsVar(&params)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
+
+		// validate params
+		if tplURL == nil && tpl == "" {
+			return errors.New("Must provide either --url or --file")
+		} else if tplURL != nil && tpl != "" {
+			return errors.New("Can't provide both --url and --file")
+		}
+
 		params, err := parseStackParams(params)
 		if err != nil {
 			return err
 		}
 
-		b, err := ioutil.ReadFile(tpl)
-		if err != nil {
-			return err
+		var b []byte
+
+		if tplURL != nil {
+			if b, err = readURL(tplURL); err != nil {
+				return err
+			}
+		} else {
+			if b, err = ioutil.ReadFile(tpl); err != nil {
+				return err
+			}
 		}
 
 		ctx := api.CreateStackContext{
@@ -47,6 +70,20 @@ func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 
 		return watchStack(svc, stackName)
 	})
+}
+
+func readURL(u *url.URL) ([]byte, error) {
+	response, err := http.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Response status was %s", response.Status)
+	}
+
+	return ioutil.ReadAll(response.Body)
 }
 
 func parseStackParams(rawParams []string) (map[string]string, error) {
