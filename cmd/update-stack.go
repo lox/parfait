@@ -34,7 +34,7 @@ func ConfigureUpdateStack(app *kingpin.Application, sess client.ConfigProvider) 
 			return err
 		}
 
-		ctx := stacks.CreateStackContext{
+		ctx := stacks.UpdateStackContext{
 			Params: params,
 			Body:   tpl.String(),
 		}
@@ -42,7 +42,7 @@ func ConfigureUpdateStack(app *kingpin.Application, sess client.ConfigProvider) 
 		t := time.Now()
 		svc := cloudformation.New(sess)
 
-		if err = stacks.Create(svc, stackName, ctx); err != nil {
+		if err = stacks.Update(svc, stackName, ctx); err != nil {
 			return err
 		}
 

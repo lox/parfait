@@ -3,7 +3,6 @@ package logwatch
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -54,9 +53,12 @@ func (lw *LogWatcher) pollStreams(ctx context.Context) ([]*string, error) {
 
 func (lw *LogWatcher) describeStreams() ([]*string, error) {
 	params := &cwl.DescribeLogStreamsInput{
-		LogGroupName:        aws.String(lw.LogGroup),
-		LogStreamNamePrefix: aws.String(lw.LogPrefix),
-		Descending:          aws.Bool(true),
+		LogGroupName: aws.String(lw.LogGroup),
+		Descending:   aws.Bool(true),
+	}
+
+	if lw.LogPrefix != "" {
+		params.LogStreamNamePrefix = aws.String(lw.LogPrefix)
 	}
 
 	streams := []*string{}
@@ -89,14 +91,8 @@ func (lw *LogWatcher) readEventsAfter(streams []*string, ts int64, events chan *
 }
 
 func (lw *LogWatcher) PrintEvent(ev Event) {
-	name := strings.TrimPrefix(*ev.LogStreamName, lw.LogPrefix)
-	if len(name) > 50 {
-		name = name[:47] + "..."
-	}
-
-	fmt.Printf("%-20s %-52s %s\n",
-		parseEventTime(*ev.Timestamp).Format(time.Stamp),
-		name,
+	fmt.Printf("%s %s\n",
+		parseEventTime(*ev.Timestamp).Local().Format("2006/01/02 15:04:05"),
 		*ev.Message,
 	)
 }
