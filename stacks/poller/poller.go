@@ -84,7 +84,7 @@ func UntilDeleted(api cfnInterface, stackName string, f func(e *cfn.StackEvent))
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok {
 			// 400: ValidationError: Stack does not exist
-			if awsErr.Code() == "400" {
+			if awsErr.Code() == "ValidationError" {
 				return nil
 			}
 		}

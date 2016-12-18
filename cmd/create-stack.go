@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/client"
@@ -46,7 +45,7 @@ func ConfigureCreateStack(app *kingpin.Application, sess client.ConfigProvider) 
 		}
 
 		return stacks.Watch(cfn, stackName, func(event *cloudformation.StackEvent) {
-			log.Printf("%s\n", stacks.FormatStackEvent(event))
+			fmt.Printf("%s\n", stacks.FormatStackEvent(event))
 		})
 	})
 }

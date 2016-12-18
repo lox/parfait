@@ -1,7 +1,7 @@
 package stacks
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/lox/parfait/stacks/poller"
@@ -18,8 +18,10 @@ func Watch(cfn cfnInterface, stackName string, f func(event *cloudformation.Stac
 		return err
 	}
 
+	fmt.Println()
+	fmt.Printf("%-20s %-80s\n", "KEY", "VALUE")
 	for k, v := range outputs {
-		log.Printf("Stack Output: %s = %s", k, v)
+		fmt.Printf("%-20s %-80s\n", k, v)
 	}
 
 	return nil

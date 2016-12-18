@@ -25,7 +25,8 @@ func FormatStackEvent(event *cloudformation.StackEvent) string {
 	if event.ResourceStatusReason != nil {
 		descr = fmt.Sprintf("=> %q", *event.ResourceStatusReason)
 	}
-	return fmt.Sprintf("%s -> %s [%s] %s",
+	return fmt.Sprintf("%s %s -> %s [%s] %s",
+		event.Timestamp.Local().Format("2006/01/02 15:04:05"),
 		FormatStackStatus(*event.ResourceStatus),
 		*event.LogicalResourceId,
 		*event.ResourceType,
