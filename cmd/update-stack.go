@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io/ioutil"
+	"time"
 
 	"github.com/lox/parfait/api"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -40,10 +41,11 @@ func ConfigureUpdateStack(app *kingpin.Application, svc api.Services) {
 			Params: params,
 		}
 
+		t := time.Now()
 		if err = api.CreateStack(svc.Cloudformation, stackName, string(b), ctx); err != nil {
 			return err
 		}
 
-		return watchStack(svc, stackName)
+		return watchStack(svc, stackName, t)
 	})
 }

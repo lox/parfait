@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/lox/parfait/api"
@@ -18,13 +19,15 @@ func ConfigureWatchStack(app *kingpin.Application, svc api.Services) {
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		return watchStack(svc, stackName)
+		return watchStack(svc, stackName, time.Time(0))
 	})
 }
 
-func watchStack(svc api.Services, stackName string) error {
+func watchStack(svc api.Services, stackName string, after t.Time) error {
 	err := api.PollUntilCreated(svc.Cloudformation, stackName, func(event *cloudformation.StackEvent) {
-		log.Printf("%s\n", api.FormatStackEvent(event))
+		if event.Timestamp.After(after) {
+			log.Printf("%s\n", api.FormatStackEvent(event))
+		}
 	})
 	if err != nil {
 		return err

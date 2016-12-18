@@ -35,7 +35,6 @@ func ConfigureCreateStack(app *kingpin.Application, svc api.Services) {
 		StringsVar(&params)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-
 		// validate params
 		if tplURL == nil && tpl == "" {
 			return errors.New("Must provide either --url or --file")
