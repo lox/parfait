@@ -1,4 +1,4 @@
-Parfait [![Build status](https://badge.buildkite.com/626907f71e5a0fde836085a4aa28d1b22ee36be71d5b88f476.svg)](https://buildkite.com/lox/parfait)
+Parfait [![Build status](https://badge.buildkite.com/626907f71e5a0fde836085a4aa28d1b22ee36be71d5b88f476.svg)](https://buildkite.com/lox/parfait) [![Latest Release](https://img.shields.io/github/release/lox/parfait.svg)](https://github.com/lox/parfait/releases)
 =======
 
 A command-line tool for creating and managing cloudformation stacks. 
