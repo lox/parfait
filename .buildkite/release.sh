@@ -1,6 +1,11 @@
 #!/bin/bash
 set -eu -o pipefail
 
+if [[ ! "$BUILDKITE_TAG" =~ ^v ]] ; then
+  echo "Skipping non-tag build"
+  exit 0
+fi
+
 VERSION="$(git describe --tags --candidates=1 2>/dev/null || echo dev)"
 
 download_github_release() {
@@ -13,12 +18,10 @@ github_release() {
   ./github-release lox/parfait "$version" "$BUILDKITE_COMMIT" "$(git cat-file -p "$version" | tail -n +6)" 'build/*'
 }
 
+download_github_release
+
 echo "--- Downloading build artifacts"
 buildkite-agent artifact download 'build/*' .
 
-if [[ "$BUILDKITE_TAG" =~ ^v ]] ; then
-  download_github_release
-
-  echo "+++ Releasing version ${VERSION} on github.com"
-  github_release "${VERSION}"
-fi
+echo "+++ Releasing version ${VERSION} on github.com"
+github_release "${VERSION}"

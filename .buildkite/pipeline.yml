@@ -11,5 +11,4 @@ steps:
 
   - name: ":github: Release"
     command: .buildkite/release.sh
-    branches: "master add-buildkite-ci"
 
