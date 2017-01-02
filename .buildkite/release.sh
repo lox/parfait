@@ -10,7 +10,7 @@ download_github_release() {
 
 github_release() {
   local version="$1"
-  ./github-release cardigann/cardigann "$version" "$TRAVIS_COMMIT" "$(git cat-file -p "$version" | tail -n +6)" ""
+  ./github-release cardigann/cardigann "$version" "$BUILDKITE_COMMIT" "$(git cat-file -p "$version" | tail -n +6)" ""
 }
 
 if [[ "$BUILDKITE_TAG" =~ ^v ]] ; then
