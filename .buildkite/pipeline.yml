@@ -8,7 +8,7 @@ steps:
 
   - name: ":github: Release"
     command: .buildkite/release.sh
-    branches: "master"
+    branches: "master add-buildkite-ci"
     plugins:
       docker-compose:
         run: builder

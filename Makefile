@@ -6,6 +6,10 @@ test:
 	go get github.com/kardianos/govendor
 	govendor test +local
 
+setup:
+	go get github.com/mitchellh/gox
+	go get github.com/kardianos/govendor
+
 build:
 	go build -ldflags="$(FLAGS)" $(PREFIX)
 

@@ -13,6 +13,8 @@ github_release() {
   ./github-release cardigann/cardigann "$version" "$BUILDKITE_COMMIT" "$(git cat-file -p "$version" | tail -n +6)" ""
 }
 
+make setup
+
 if [[ "$BUILDKITE_TAG" =~ ^v ]] ; then
   download_github_release
 
