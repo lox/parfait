@@ -1,4 +1,4 @@
-Parfait 
+Parfait [![Build status](https://badge.buildkite.com/626907f71e5a0fde836085a4aa28d1b22ee36be71d5b88f476.svg)](https://buildkite.com/lox/parfait)
 =======
 
 A command-line tool for creating and managing cloudformation stacks. 
