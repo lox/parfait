@@ -76,6 +76,7 @@ func Create(svc cfnInterface, name string, ctx CreateStackContext) error {
 		StackName: aws.String(name),
 		Capabilities: []*string{
 			aws.String("CAPABILITY_IAM"),
+			aws.String("CAPABILITY_NAMED_IAM"),
 		},
 		DisableRollback: aws.Bool(ctx.DisableRollback),
 		Parameters:      paramsSlice,
@@ -135,6 +136,7 @@ func Update(svc cfnInterface, name string, ctx UpdateStackContext) error {
 		StackName: aws.String(name),
 		Capabilities: []*string{
 			aws.String("CAPABILITY_IAM"),
+			aws.String("CAPABILITY_NAMED_IAM"),
 		},
 		Parameters:   paramsSlice,
 		TemplateBody: aws.String(ctx.Body),
