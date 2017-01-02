@@ -14,7 +14,7 @@ github_release() {
 }
 
 echo "--- Downloading build artifacts"
-buildkite-agent artifact download 'build/*' build/
+buildkite-agent artifact download 'build/*' .
 ls -al build/
 
 if [[ "$BUILDKITE_TAG" =~ ^v ]] ; then
