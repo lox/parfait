@@ -1,7 +1,7 @@
 PREFIX=github.com/lox/parfait
 VERSION=$(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 FLAGS=-X main.Version=$(VERSION)
-ARCHS="linux/amd64 darwin/amd64 windows/amd64"
+ARCHS=linux/amd64 darwin/amd64 windows/amd64
 
 test:
 	go get github.com/kardianos/govendor
