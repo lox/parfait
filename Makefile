@@ -11,6 +11,9 @@ setup:
 	go get github.com/mitchellh/gox
 	go get github.com/kardianos/govendor
 
+clean:
+	-rm -rf build/
+
 build:
 	mkdir -p build/
 	gox -osarch="$(ARCHS)" -ldflags="$(FLAGS)" -output="build/parfait_{{.OS}}_{{.Arch}}" $(PREFIX)

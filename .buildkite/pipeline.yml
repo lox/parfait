@@ -1,6 +1,6 @@
 steps:
   - name: ":hammer:"
-    command: make setup build
+    command: make setup clean build
     artifact_paths: 'build/*'
     plugins:
       docker-compose:
