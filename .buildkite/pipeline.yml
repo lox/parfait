@@ -1,6 +1,14 @@
 steps:
-  - name: ":hammer: "
+  - name: ":hammer:"
     command: make build
+    plugins:
+      docker-compose:
+        run: builder
+        config: .buildkite/docker-compose.yml
+
+  - name: ":github: Release"
+    command: .buildkite/release.sh
+    branches: "master"
     plugins:
       docker-compose:
         run: builder
