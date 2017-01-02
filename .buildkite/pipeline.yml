@@ -1,6 +1,7 @@
 steps:
   - name: ":hammer:"
     command: make build
+    artifact_paths: 'build/*'
     plugins:
       docker-compose:
         run: builder
@@ -9,6 +10,7 @@ steps:
   - name: ":github: Release"
     command: .buildkite/release.sh
     branches: "master add-buildkite-ci"
+    artifact_paths: 'build/*'
     plugins:
       docker-compose:
         run: builder
