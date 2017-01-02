@@ -10,8 +10,4 @@ steps:
   - name: ":github: Release"
     command: .buildkite/release.sh
     branches: "master add-buildkite-ci"
-    artifact_paths: 'build/*'
-    plugins:
-      docker-compose:
-        run: builder
-        config: .buildkite/docker-compose.yml
+

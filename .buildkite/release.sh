@@ -13,11 +13,13 @@ github_release() {
   ./github-release lox/parfait "$version" "$BUILDKITE_COMMIT" "$(git cat-file -p "$version" | tail -n +6)" ""
 }
 
+echo "--- Downloading build artifacts"
+buildkite-agent artifact download 'build/*' build/
 ls -al build/
 
 if [[ "$BUILDKITE_TAG" =~ ^v ]] ; then
   download_github_release
 
-  echo "Releasing version ${VERSION} on github.com"
+  echo "+++ Releasing version ${VERSION} on github.com"
   github_release "${VERSION}"
 fi
