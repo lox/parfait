@@ -121,10 +121,21 @@ func Update(svc cfnInterface, name string, ctx UpdateStackContext) error {
 		return err
 	}
 
+	// lookup previous parameters so we don't use previous values that don't exist
+	previousParams, err := Parameters(svc, name)
+	if err != nil {
+		return err
+	}
+
 	// use previous values for any missing params
 	for _, param := range validate.Parameters {
+		previousValue, hadPreviousParam := previousParams[*param.ParameterKey]
+		if !hadPreviousParam {
+			log.Printf("Skipping previous value for %s, it didn't exist", *param.ParameterKey)
+			continue
+		}
 		if _, hasParam := ctx.Params[*param.ParameterKey]; !hasParam {
-			log.Printf("Using previous value for %s", *param.ParameterKey)
+			log.Printf("Using previous value %q for %s", previousValue, *param.ParameterKey)
 			paramsSlice = append(paramsSlice, &cloudformation.Parameter{
 				ParameterKey:     param.ParameterKey,
 				UsePreviousValue: aws.Bool(true),
@@ -150,6 +161,27 @@ func Delete(svc cfnInterface, name string) error {
 	})
 
 	return err
+}
+
+func Parameters(svc cfnInterface, name string) (map[string]string, error) {
+	resp, err := svc.DescribeStacks(&cloudformation.DescribeStacksInput{
+		StackName: aws.String(name),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Stacks) != 1 {
+		return nil, fmt.Errorf("Expected 1 stack, got %d", len(resp.Stacks))
+	}
+
+	params := map[string]string{}
+	for _, param := range resp.Stacks[0].Parameters {
+		params[*param.ParameterKey] = *param.ParameterValue
+	}
+
+	return params, nil
 }
 
 func Outputs(svc cfnInterface, name string) (map[string]string, error) {
