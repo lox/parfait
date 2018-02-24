@@ -205,24 +205,46 @@ func Outputs(svc cfnInterface, name string) (map[string]string, error) {
 	return outputs, nil
 }
 
-func IsFailed(svc cfnInterface, name string) (bool, error) {
+func Status(svc cfnInterface, name string) (string, error) {
 	resp, err := svc.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
 	if err != nil {
-		return true, err
+		return "", err
 	}
 
 	if len(resp.Stacks) != 1 {
-		return true, fmt.Errorf("Expected 1 stack, got %d", len(resp.Stacks))
+		return "", fmt.Errorf("Expected 1 stack, got %d", len(resp.Stacks))
 	}
 
-	log.Printf("%#v", *resp.Stacks[0].StackStatus)
+	return *resp.Stacks[0].StackStatus, nil
+}
 
-	outputs := map[string]string{}
-	for _, output := range resp.Stacks[0].Outputs {
-		outputs[*output.OutputKey] = *output.OutputValue
+func GetError(svc cfnInterface, name string) error {
+	status, err := Status(svc, name)
+	if err != nil {
+		return err
 	}
 
-	return false, nil
+	switch status {
+	case cloudformation.ResourceStatusUpdateFailed:
+		return fmt.Errorf("Stack failed to update")
+
+	case cloudformation.ResourceStatusCreateFailed:
+		return fmt.Errorf("Stack failed to create")
+
+	case cloudformation.StackStatusRollbackComplete:
+		return fmt.Errorf("Stack rollback succeeded")
+
+	case cloudformation.StackStatusRollbackFailed:
+		return fmt.Errorf("Stack rollback failed")
+
+	case cloudformation.StackStatusUpdateRollbackComplete:
+		return fmt.Errorf("Stack update failed, rollback succeeded")
+
+	case cloudformation.StackStatusUpdateRollbackFailed:
+		return fmt.Errorf("Stack update failed, rollback failed")
+	}
+
+	return nil
 }

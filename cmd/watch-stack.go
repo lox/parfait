@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/fatih/color"
 	"github.com/lox/parfait/stacks"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -20,8 +22,13 @@ func ConfigureWatchStack(app *kingpin.Application, sess client.ConfigProvider) {
 		StringVar(&stackName)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		return stacks.Watch(cloudformation.New(sess), stackName, func(event *cloudformation.StackEvent) {
+		err := stacks.Watch(cloudformation.New(sess), stackName, func(event *cloudformation.StackEvent) {
 			fmt.Printf("%s\n", stacks.FormatStackEvent(event))
 		})
+		if err != nil {
+			fmt.Printf("\n%v\n\n", color.RedString(err.Error()))
+			os.Exit(1)
+		}
+		return nil
 	})
 }

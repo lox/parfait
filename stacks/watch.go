@@ -1,7 +1,6 @@
 package stacks
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -14,8 +13,8 @@ func Watch(cfn cfnInterface, stackName string, f func(event *cloudformation.Stac
 		return err
 	}
 
-	if failed, _ := IsFailed(cfn, stackName); failed {
-		return errors.New("Stack has failed")
+	if err = GetError(cfn, stackName); err != nil {
+		return err
 	}
 
 	outputs, err := Outputs(cfn, stackName)
