@@ -1,9 +1,9 @@
 steps:
   - name: ":hammer:"
     plugins:
-      golang-build#v1.0.0:
+      golang-build#1a1e0cd:
         build: main.go
-        package: github.com/lox/parfat
+        package: github.com/lox/parfait
         targets:
          - version: 1.10.0
            goos: linux
