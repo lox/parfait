@@ -57,6 +57,7 @@ func (p *Poller) Poll(condition EndCondition, f func(e *cfn.StackEvent)) error {
 	return nil
 }
 
+// getEvents returns all events after a given time in reverse chronological order
 func (p *Poller) getEvents(after time.Time) (events []*cfn.StackEvent, err error) {
 	params := &cfn.DescribeStackEventsInput{
 		StackName: aws.String(p.StackName),
@@ -68,6 +69,12 @@ func (p *Poller) getEvents(after time.Time) (events []*cfn.StackEvent, err error
 				return true
 			}
 			events = append(events, event)
+
+			// stop once we hit the most recent User Initiated event
+			if event.ResourceStatusReason != nil &&
+				*event.ResourceStatusReason == `User Initiated` {
+				return true
+			}
 		}
 		return last
 	})
