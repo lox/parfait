@@ -14,12 +14,16 @@ import (
 func ConfigureCreateStack(app *kingpin.Application, sess client.ConfigProvider) {
 	var stackName string
 	var params []string
+	var disableRollback bool
 
 	cmd := app.Command("create-stack", "Create a cloudformation stack")
 	cmd.Alias("create")
 
 	tpl := args.TemplateSource(cmd.Flag("tpl", "Either a file path or url to a cloudformation template").
 		Short('t'))
+
+	cmd.Flag("no-rollback", "Disable stack rollback on failure").
+		BoolVar(&disableRollback)
 
 	cmd.Arg("stack-name", "The name of the cloudformation stack").
 		StringVar(&stackName)
@@ -34,8 +38,9 @@ func ConfigureCreateStack(app *kingpin.Application, sess client.ConfigProvider) 
 		}
 
 		ctx := stacks.CreateStackContext{
-			Params: params,
-			Body:   tpl.String(),
+			Params:          params,
+			Body:            tpl.String(),
+			DisableRollback: disableRollback,
 		}
 
 		cfn := cloudformation.New(sess)
