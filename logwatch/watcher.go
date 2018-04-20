@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	cwl "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
@@ -36,8 +37,14 @@ func (lw *LogWatcher) pollStreams(ctx context.Context) ([]*string, error) {
 
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-time.After(2 * time.Second):
 			streams, err = lw.describeStreams()
+			if aerr, ok := err.(awserr.Error); ok {
+				if aerr.Code() == `Throttling` {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+			}
 			if err != nil {
 				return nil, err
 			}
