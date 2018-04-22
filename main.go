@@ -6,11 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/lox/parfait/cmd"
+	"github.com/lox/parfait/version"
 	"gopkg.in/alecthomas/kingpin.v2"
-)
-
-var (
-	Version string
 )
 
 func main() {
@@ -21,7 +18,7 @@ func run(args []string, exit func(code int)) {
 	app := kingpin.New("parfait",
 		`A tool for creating and monitoring AWS CloudFormation stacks`)
 
-	app.Version(Version)
+	app.Version(version.Version)
 	app.Writer(os.Stdout)
 	app.DefaultEnvars()
 	app.Terminate(exit)
