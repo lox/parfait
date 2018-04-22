@@ -14,4 +14,5 @@ if git ls-remote --tags origin | grep "refs/tags/v${VERSION}" ; then
   exit 0
 fi
 
+buildkite-agent meta-data set release-version "$VERSION"
 buildkite-agent pipeline upload .buildkite/pipeline.release.yml

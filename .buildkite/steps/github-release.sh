@@ -1,13 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-if [[ ! "$BUILDKITE_TAG" =~ ^v ]] ; then
-  echo "Skipping non-tag build"
-  exit 0
-fi
-
-git fetch --tags
-VERSION="$(git describe --tags --candidates=1 2>/dev/null || echo dev)"
+version=$(buildkite-agent meta-data get release-version)
 
 download_github_release() {
   wget -N https://github.com/c4milo/github-release/releases/download/v1.0.8/github-release_v1.0.8_linux_amd64.tar.gz
@@ -24,5 +18,5 @@ download_github_release
 echo "--- Downloading build artifacts"
 buildkite-agent artifact download 'build/*' .
 
-echo "+++ Releasing version ${VERSION} on github.com"
-github_release "${VERSION}"
+echo "+++ Releasing version ${version} on github.com"
+github_release "${version}"
