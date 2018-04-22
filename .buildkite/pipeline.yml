@@ -8,7 +8,8 @@ steps:
         config: .buildkite/docker-compose.yml
 
   - wait
+  - name: ":pipeline:"
+    command: .buildkite/steps/upload-release-steps.sh
 
-  - name: ":github: Release"
-    command: .buildkite/release.sh
+
 
