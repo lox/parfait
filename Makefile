@@ -1,8 +1,7 @@
 PREFIX=github.com/lox/parfait
-VERSION=$(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
+VERSION=v$(shell awk -F\" '/const Version/ {print $$2}' version/version.go)
 FLAGS=-X main.Version=$(VERSION) -s -w
 ARCHS=linux/amd64 darwin/amd64 windows/amd64
-
 test:
 	go get github.com/kardianos/govendor
 	govendor test +local
