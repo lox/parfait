@@ -6,6 +6,7 @@ if [[ ! "$BUILDKITE_TAG" =~ ^v ]] ; then
   exit 0
 fi
 
+git fetch --tags
 VERSION="$(git describe --tags --candidates=1 2>/dev/null || echo dev)"
 
 download_github_release() {
