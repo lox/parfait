@@ -4,13 +4,16 @@ set -eu -o pipefail
 version=$(buildkite-agent meta-data get release-version)
 
 download_github_release() {
-  wget -N https://github.com/c4milo/github-release/releases/download/v1.0.8/github-release_v1.0.8_linux_amd64.tar.gz
-  tar -vxf github-release_v1.0.8_linux_amd64.tar.gz
+  wget -N https://github.com/buildkite/github-release/releases/download/v1.0/github-release-linux-amd64
+  mv github-release-linux-amd64 github-release
+  chmod +x ./github-release-linux-amd64
 }
 
 github_release() {
   local version="$1"
-  ./github-release lox/parfait "$version" "$BUILDKITE_COMMIT" "$(git cat-file -p "$version" | tail -n +6)" 'build/*'
+  ./github-release "$version" build/* --commit "${BUILDKITE_COMMIT}" \
+                                      --tag "v${version}" \
+                                      --github-repository "lox/parfait"
 }
 
 download_github_release
@@ -19,4 +22,4 @@ echo "--- Downloading build artifacts"
 buildkite-agent artifact download 'build/*' .
 
 echo "+++ Releasing version ${version} on github.com"
-github_release "${version}"
+github_release "v${version}"
