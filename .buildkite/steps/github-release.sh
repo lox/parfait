@@ -16,6 +16,8 @@ github_release() {
                                       --github-repository "lox/parfait"
 }
 
+export GITHUB_RELEASE_ACCESS_TOKEN="$GITHUB_TOKEN"
+
 download_github_release
 
 echo "--- Downloading build artifacts"
