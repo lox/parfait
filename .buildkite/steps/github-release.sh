@@ -12,7 +12,7 @@ download_github_release() {
 github_release() {
   local version="$1"
   ./github-release "$version" build/* --commit "${BUILDKITE_COMMIT}" \
-                                      --tag "v${version}" \
+                                      --tag "${version}" \
                                       --github-repository "lox/parfait"
 }
 
