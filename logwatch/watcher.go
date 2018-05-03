@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	cwl "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
@@ -31,7 +30,11 @@ func NewLogWatcher(awsApi awsApi, group, prefix string) *LogWatcher {
 	}
 }
 
-func (lw *LogWatcher) pollStreams(ctx context.Context) ([]*string, error) {
+// waitForStreams polls for steams to appear. Because of eventual consistency, this can sometimes take a while
+func (lw *LogWatcher) waitForStreams(ctx context.Context, timeout time.Duration) ([]*string, error) {
+	subctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	var streams []*string
 	var err error
 
@@ -39,12 +42,6 @@ func (lw *LogWatcher) pollStreams(ctx context.Context) ([]*string, error) {
 		select {
 		case <-time.After(2 * time.Second):
 			streams, err = lw.describeStreams()
-			if aerr, ok := err.(awserr.Error); ok {
-				if aerr.Code() == `Throttling` {
-					time.Sleep(5 * time.Second)
-					continue
-				}
-			}
 			if err != nil {
 				return nil, err
 			}
@@ -52,8 +49,8 @@ func (lw *LogWatcher) pollStreams(ctx context.Context) ([]*string, error) {
 				return streams, nil
 			}
 
-		case <-ctx.Done():
-			return nil, ctx.Err()
+		case <-subctx.Done():
+			return nil, subctx.Err()
 		}
 	}
 }
@@ -105,8 +102,7 @@ func (lw *LogWatcher) PrintEvent(ev Event) {
 }
 
 func (lw *LogWatcher) Watch(ctx context.Context, events chan *Event) error {
-	subctx, _ := context.WithTimeout(ctx, time.Second*5)
-	streams, err := lw.pollStreams(subctx)
+	streams, err := lw.waitForStreams(ctx, time.Second*30)
 	if err != nil {
 		return err
 	}
@@ -127,7 +123,6 @@ func (lw *LogWatcher) Watch(ctx context.Context, events chan *Event) error {
 			}
 		}
 	}
-	return nil
 }
 
 func parseEventTime(millis int64) time.Time {

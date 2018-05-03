@@ -51,7 +51,7 @@ func (p *Poller) Poll(condition EndCondition, f func(e *cfn.StackEvent)) error {
 			}
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	return nil

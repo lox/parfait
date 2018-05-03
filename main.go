@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/lox/parfait/cmd"
 	"github.com/lox/parfait/version"
@@ -23,7 +24,10 @@ func run(args []string, exit func(code int)) {
 	app.DefaultEnvars()
 	app.Terminate(exit)
 
+	// AWS session with more than the default 3 retries because
+	// we do a lot of polling
 	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{MaxRetries: aws.Int(25)},
 		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
