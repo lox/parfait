@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
@@ -247,4 +248,14 @@ func GetError(svc cfnInterface, name string) error {
 	}
 
 	return nil
+}
+
+func IsNoUpdateErr(err error) bool {
+	if aerr, ok := err.(awserr.Error); ok {
+		if aerr.Code() == `ValidationError` &&
+			aerr.Message() == `No updates are to be performed.` {
+			return true
+		}
+	}
+	return false
 }
