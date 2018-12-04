@@ -43,6 +43,10 @@ func ConfigureUpdateStack(app *kingpin.Application, sess client.ConfigProvider) 
 		svc := cloudformation.New(sess)
 
 		if err = stacks.Update(svc, stackName, ctx); err != nil {
+			if stacks.IsNoUpdateErr(err) {
+				fmt.Printf("No updates to be performed, stack is up to date\n")
+				return nil
+			}
 			return err
 		}
 
