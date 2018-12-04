@@ -17,6 +17,7 @@ type cfnInterface interface {
 	UpdateStack(*cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error)
 	GetTemplate(input *cloudformation.GetTemplateInput) (*cloudformation.GetTemplateOutput, error)
 	ValidateTemplate(input *cloudformation.ValidateTemplateInput) (*cloudformation.ValidateTemplateOutput, error)
+	GetTemplateSummary(input *cloudformation.GetTemplateSummaryInput) (*cloudformation.GetTemplateSummaryOutput, error)
 }
 
 func FindAll(svc cfnInterface) (stacks []*cloudformation.Stack, err error) {
@@ -131,7 +132,7 @@ func Update(svc cfnInterface, name string, ctx UpdateStackContext) error {
 	for _, param := range validate.Parameters {
 		previousValue, hadPreviousParam := previousParams[*param.ParameterKey]
 		if !hadPreviousParam {
-			log.Printf("Skipping previous value for %s, it didn't exist", *param.ParameterKey)
+			// log.Printf("Skipping previous value for %s, it didn't exist", *param.ParameterKey)
 			continue
 		}
 		if _, hasParam := ctx.Params[*param.ParameterKey]; !hasParam {
@@ -164,6 +165,21 @@ func Delete(svc cfnInterface, name string) error {
 }
 
 func Parameters(svc cfnInterface, name string) (map[string]string, error) {
+	templateSummary, err := svc.GetTemplateSummary(&cloudformation.GetTemplateSummaryInput{
+		StackName: aws.String(name),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	defaults := map[string]string{}
+	for _, param := range templateSummary.Parameters {
+		if param.DefaultValue != nil {
+			defaults[*param.ParameterKey] = *param.DefaultValue
+		}
+	}
+
 	resp, err := svc.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
@@ -172,12 +188,12 @@ func Parameters(svc cfnInterface, name string) (map[string]string, error) {
 		return nil, err
 	}
 
-	if len(resp.Stacks) != 1 {
-		return nil, fmt.Errorf("Expected 1 stack, got %d", len(resp.Stacks))
-	}
-
 	params := map[string]string{}
 	for _, param := range resp.Stacks[0].Parameters {
+		if defaultValue, ok := defaults[*param.ParameterKey]; ok && defaultValue == *param.ParameterValue {
+			// log.Printf("Skipping default value for %s", *param.ParameterKey)
+			continue
+		}
 		params[*param.ParameterKey] = *param.ParameterValue
 	}
 
