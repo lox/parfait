@@ -58,10 +58,7 @@ func ConfigureCreateStack(app *kingpin.Application, sess client.ConfigProvider) 
 func parseStackParams(rawParams []string) (map[string]string, error) {
 	params := map[string]string{}
 	for _, arg := range rawParams {
-		parts := strings.Split(arg, "=")
-		if len(parts) != 2 {
-			return params, fmt.Errorf("Failed to parse parameter %q", arg)
-		}
+		parts := strings.SplitN(arg, "=", 2)
 		params[parts[0]] = parts[1]
 	}
 	return params, nil
